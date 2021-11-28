@@ -15,11 +15,10 @@ import csv
 
 
 class Solver(object):
-	def __init__(self, config, train_loader, valid_loader, test_loader):
+	def __init__(self, config, train_loader, test_loader):
 
 		# Data loader
 		self.train_loader = train_loader
-		self.valid_loader = valid_loader
 		self.test_loader = test_loader
 
 		# Models
@@ -258,7 +257,7 @@ class Solver(object):
 			JS = 0.		# Jaccard Similarity
 			DC = 0.		# Dice Coefficient
 			length=0
-			for i, (images, GT) in enumerate(self.valid_loader):
+			for i, (images, GT) in enumerate(self.test_loader):
 
 				images = images.to(self.device)
 				GT = GT.to(self.device)

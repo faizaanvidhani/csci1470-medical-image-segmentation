@@ -8,7 +8,8 @@ import tensorflow.keras.layers.CenterCrop as crop
 from PIL import Image
 from tflite_model_maker.image_classifier import DataLoader
 
-class ImageFolder(tf.data.Dataset):
+class ImageFolder(tf.keras.utils.Sequence):
+    
     def __init__(self, root,image_size=224,mode='train',augmentation_prob=0.4):
         self.root = root
         self.label_paths = root[:-1]+'_GT/'
@@ -17,11 +18,16 @@ class ImageFolder(tf.data.Dataset):
         self.mode = mode
         self.rotation = [0, 90, 180, 270]
         self.augmentation_prob = augmentation_prob
+        # self.batch_size = 50
+
+    def __len__(self):
+        """Returns the total number of input images."""
+        return len(self.input_paths)
 
     def __getitem__(self, index):
         input_path = self.image_paths[index]
         filename = input_path.split('_')[-1][:-len(".jpg")]
-        label_path = self.label_paths + 'ISIC_' + filename + '_segmentation.png'
+        label_path = self.label_paths + 'ISIC_' + filename + '_Segmentation.png'
 
         input = Image.open(input_path)
         label = Image.open(label_path)
@@ -86,18 +92,21 @@ class ImageFolder(tf.data.Dataset):
 
         return input, label
 
-    def __len__(self):
-        """Returns the total number of input images."""
-        return len(self.input_paths)
-
 def get_loader(image_path, image_size, batch_size, num_workers=2, mode='train', augmentation_prob=0.4):
 	"""Builds and returns Dataloader."""
-	
+
 	dataset = ImageFolder(root=image_path, image_size=image_size, mode=mode,augmentation_prob=augmentation_prob)
+    tf.data.iterator(dataset)
 	data_loader = data.DataLoader(dataset=dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
-	return data_loader
+    return data_loader
 
 
 # Tensor flow implementation
+
+# Import Data
 dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
+
+# Create Iterator
+
+# Consume Data
 data_loader = DataLoader(dataset, size, index_to_label)

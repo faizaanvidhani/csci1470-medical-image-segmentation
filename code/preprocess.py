@@ -6,18 +6,19 @@ import tensorflow as tf
 import tensorflow.contrib.image.rotate as rotate
 import tensorflow.keras.layers.CenterCrop as crop
 from PIL import Image
+from tflite_model_maker.image_classifier import DataLoader
 
-class ImageFolder(data.Dataset):
+class ImageFolder(tf.data.Dataset):
     def __init__(self, root,image_size=224,mode='train',augmentation_prob=0.4):
         self.root = root
         self.label_paths = root[:-1]+'_GT/'
-        self.image_paths = list(map(lambda x: os.path.join(root,x), os.listdir(root)))
+        self.input_paths = list(map(lambda x: os.path.join(root,x), os.listdir(root)))
         self.image_size = image_size
         self.mode = mode
         self.rotation = [0, 90, 180, 270]
         self.augmentation_prob = augmentation_prob
 
-    def get_item(self, index):
+    def __getitem__(self, index):
         input_path = self.image_paths[index]
         filename = input_path.split('_')[-1][:-len(".jpg")]
         label_path = self.label_paths + 'ISIC_' + filename + '_segmentation.png'
@@ -86,8 +87,8 @@ class ImageFolder(data.Dataset):
         return input, label
 
     def __len__(self):
-        """Returns the total number of font files."""
-        return len(self.image_paths)
+        """Returns the total number of input images."""
+        return len(self.input_paths)
 
 def get_loader(image_path, image_size, batch_size, num_workers=2, mode='train', augmentation_prob=0.4):
 	"""Builds and returns Dataloader."""
@@ -97,24 +98,6 @@ def get_loader(image_path, image_size, batch_size, num_workers=2, mode='train', 
 	return data_loader
 
 
-
-
-
-
-
-# My Implementation
-
-def get_data(inputs_file_path, labels_file_path, num_examples):
-    # num_examples = 900 for train files and 300 for test files
-
-    for i in range(num_examples):
-        rotation = [0, 90, 180, 270, 360]
-        input = 
-        label = 
-
-        # Normalize Image but not GT?
-        return input, label
-
-
-# Note: Image dimensions are 1022 × 767
-for filename in os.listdir(directory):
+# Tensor flow implementation
+dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
+data_loader = DataLoader(dataset, size, index_to_label)

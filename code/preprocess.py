@@ -18,7 +18,7 @@ class ImageFolder(tf.keras.utils.Sequence):
         self.mode = mode
         self.rotation = [0, 90, 180, 270]
         self.augmentation_prob = augmentation_prob
-        # self.batch_size = 50
+        self.batch_size = 50
 
     def __len__(self):
         """Returns the total number of input images."""
@@ -94,11 +94,13 @@ class ImageFolder(tf.keras.utils.Sequence):
 
 def get_loader(image_path, image_size, batch_size, num_workers=2, mode='train', augmentation_prob=0.4):
 	"""Builds and returns Dataloader."""
-
 	dataset = ImageFolder(root=image_path, image_size=image_size, mode=mode,augmentation_prob=augmentation_prob)
-    tf.data.iterator(dataset)
-	data_loader = data.DataLoader(dataset=dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
-    return data_loader
+	dataset = tf.data.Dataset.from_tensor_slices(dataset)
+	dataset = dataset.shuffle(buffer_size=dataset.__len__).batch(batch_size, drop_remainder=True)
+	return dataset
+
+    #tf.data.iterator(dataset)
+	#data_loader = data.DataLoader(dataset=dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
 
 
 # Tensor flow implementation

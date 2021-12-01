@@ -8,7 +8,7 @@ import tensorflow as tf
 def init_weights(net, init_type='normal', gain=0.02):
 
     '''
-    #the init funcition may not be compeletely necessary
+#the init funcition may not be compeletely necessary
     '''
     def init_func(m):
         classname = m.__class__.__name__

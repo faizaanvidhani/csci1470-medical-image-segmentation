@@ -10,7 +10,7 @@ from tensorflow.keras import optimizers
 #import torch.nn.functional as F
 import tensorflow.keras.activations as activations
 from evaluation import *
-from network import R2AttU_Net
+from network import R2U_Net
 import csv
 
 
@@ -55,7 +55,7 @@ class Solver(object):
 
 	def build_model(self):
 		"""Build generator and discriminator."""
-		self.unet = R2AttU_Net(img_ch=3,output_ch=1,t=self.t)
+		self.unet = R2U_Net(img_ch=3,output_ch=1,t=self.t)
         optimizer = optimizers.Adam(self.lr, self.beta1, self.beta2)
         self.unet.to(self.device)
 

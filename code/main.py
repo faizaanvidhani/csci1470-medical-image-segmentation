@@ -45,12 +45,12 @@ def main(config):
                             num_workers=config.num_workers,
                             mode='train',
                             augmentation_prob=config.augmentation_prob)
-    valid_loader = get_loader(image_path=config.valid_path,
+     valid_loader = get_loader(image_path=config.valid_path,
                             image_size=config.image_size,
                             batch_size=config.batch_size,
                             num_workers=config.num_workers,
                             mode='valid',
-                            augmentation_prob=0.)
+                            augmentation_prob=0.) 
     test_loader = get_loader(image_path=config.test_path,
                             image_size=config.image_size,
                             batch_size=config.batch_size,
@@ -58,7 +58,7 @@ def main(config):
                             mode='test',
                             augmentation_prob=0.)
 
-    solver = Solver(config, train_loader, test_loader)
+    solver = Solver(train_loader, test_loader)
     """
     
     # Train and sample the images

@@ -6,7 +6,6 @@ import tensorflow as tf
 import tensorflow.contrib.image.rotate as rotate
 import tensorflow.keras.layers.CenterCrop as crop
 from PIL import Image
-from tflite_model_maker.image_classifier import DataLoader
 
 """
 class ImageFolder(tf.keras.utils.Sequence):
@@ -119,7 +118,7 @@ def get_data(input_path, label_path, num_inputs, image_size=224, mode='train', a
     for file_name in os.listdir(input_path):
         input_img = Image.open(input_path + file_name)
         label_img = Image.open(input_path + file_name[:-len(".jpg")] + '_Segmentation.png')
-        processed_input, processed_label = get_data(input_img, label_img, mode=mode, augmentation_prob=augmentation_prob)
+        processed_input, processed_label = getInputLabel(input_img, label_img, mode=mode, augmentation_prob=augmentation_prob)
         input.append(processed_input)
         label.append(processed_label)
     return input, label

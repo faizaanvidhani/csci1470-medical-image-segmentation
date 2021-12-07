@@ -35,8 +35,8 @@ def main(config):
     print(config)
 
     # New Way of Importing Train Data and Test Data
-    train_inputs, train_labels = get_data('../data/ISBI2016_ISIC_Part1_Training_Data', '../data/ISBI2016_ISIC_Part1_Training_GroundTruth', 900)
-    test_inputs, test_labels = get_data('../data/ISBI2016_ISIC_Part1_Test_Data', '../data/ISBI2016_ISIC_Part1_Test_GroundTruth', 379)
+    train_inputs, train_labels = get_data('../data/ISBI2016_ISIC_Part1_Training_Data', '../data/ISBI2016_ISIC_Part1_Training_GroundTruth', 900, mode='train')
+    test_inputs, test_labels = get_data('../data/ISBI2016_ISIC_Part1_Test_Data', '../data/ISBI2016_ISIC_Part1_Test_GroundTruth', 379, mode='test',augmentation_prob=0.)
 
     """
     train_loader = get_loader(image_path=config.train_path,

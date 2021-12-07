@@ -57,10 +57,8 @@ def main(config):
 
     
     # Train and sample the images
-    if config.mode == 'train':
-        solver.train()
-    elif config.mode == 'test':
-        solver.test()
+    solver.train()
+    solver.test()
 
 
 if __name__ == '__main__':

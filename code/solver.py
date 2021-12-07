@@ -22,7 +22,7 @@ class Solver(object):
 		self.test_loader = test_loader
 
 		# Models
-		self.unet = R2U_Net(self.img_ch,self.output_ch,t=self.t)
+		self.model = R2U_Net(self.img_ch,self.output_ch,t=self.t)
 		self.optimizer = optimizers.Adam(self.lr, self.beta1, self.beta2)
 		self.img_ch = 3
 		self.output_ch = 1
@@ -115,13 +115,16 @@ class Solver(object):
 				SR_flat = SR_probs.view(SR_probs.size(0),-1)
 
 				GT_flat = GT.view(GT.size(0),-1)
-				loss = self.criterion(SR_flat,GT_flat)
-				epoch_loss += loss.item()
 
 				# Backprop + optimize
-				self.reset_grad()
+				""" self.reset_grad()
 				loss.backward()
-				self.optimizer.step()
+				self.optimizer.step() """
+				with tf.GradientTape() as tape:
+					loss = self.criterion(SR_flat,GT_flat)
+					epoch_loss += loss.item()
+				gradients = tape.gradient(loss, self.model.trainable_variables)
+				self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
 
 				acc += get_accuracy(SR,GT)
 				SE += get_sensitivity(SR,GT)
@@ -157,47 +160,49 @@ class Solver(object):
 		
 					
 			#===================================== Test ====================================#
-			del self.unet
-			self.build_model()
-			self.unet.load_state_dict(tf.io.read_file(unet_path))
-			
-			self.unet.train(False)
-			self.unet.eval()
 
-			acc = 0.	# Accuracy
-			SE = 0.		# Sensitivity (Recall)
-			SP = 0.		# Specificity
-			PC = 0. 	# Precision
-			F1 = 0.		# F1 Score
-			JS = 0.		# Jaccard Similarity
-			DC = 0.		# Dice Coefficient
-			length=0
-			for i, (images, GT) in enumerate(self.test_loader):
+	def test(self):
+		""" del self.unet
+		self.build_model()
+		self.unet.load_state_dict(tf.io.read_file(unet_path))
+		
+		self.unet.train(False) """
+		self.unet.eval()
 
-				images = images.to(self.device)
-				GT = GT.to(self.device)
-				SR = activations.sigmoid(self.unet(images))
-				acc += get_accuracy(SR,GT)
-				SE += get_sensitivity(SR,GT)
-				SP += get_specificity(SR,GT)
-				PC += get_precision(SR,GT)
-				F1 += get_F1(SR,GT)
-				JS += get_JS(SR,GT)
-				DC += get_DC(SR,GT)
-						
-				length += images.size(0)
+		acc = 0.	# Accuracy
+		SE = 0.		# Sensitivity (Recall)
+		SP = 0.		# Specificity
+		PC = 0. 	# Precision
+		F1 = 0.		# F1 Score
+		JS = 0.		# Jaccard Similarity
+		DC = 0.		# Dice Coefficient
+		length=0
+		for i, (images, GT) in enumerate(self.test_loader):
+
+			images = images.to(self.device)
+			GT = GT.to(self.device)
+			SR = activations.sigmoid(self.unet(images))
+			acc += get_accuracy(SR,GT)
+			SE += get_sensitivity(SR,GT)
+			SP += get_specificity(SR,GT)
+			PC += get_precision(SR,GT)
+			F1 += get_F1(SR,GT)
+			JS += get_JS(SR,GT)
+			DC += get_DC(SR,GT)
 					
-			acc = acc/length
-			SE = SE/length
-			SP = SP/length
-			PC = PC/length
-			F1 = F1/length
-			JS = JS/length
-			DC = DC/length
-			unet_score = JS + DC
+			length += images.size(0)
+				
+		acc = acc/length
+		SE = SE/length
+		SP = SP/length
+		PC = PC/length
+		F1 = F1/length
+		JS = JS/length
+		DC = DC/length
+		#unet_score = JS + DC
 
 
-			f = open(os.path.join(self.result_path,'result.csv'), 'a', encoding='utf-8', newline='')
-			wr = csv.writer(f)
-			wr.writerow([self.model_type,acc,SE,SP,PC,F1,JS,DC,self.lr,self.num_epochs,self.num_epochs_decay,self.augmentation_prob])
-			f.close()
+		#f = open(os.path.join(self.result_path,'result.csv'), 'a', encoding='utf-8', newline='')
+		#wr = csv.writer(f)
+		#wr.writerow([self.model_type,acc,SE,SP,PC,F1,JS,DC,self.lr,self.num_epochs,self.num_epochs_decay,self.augmentation_prob])
+		#f.close()

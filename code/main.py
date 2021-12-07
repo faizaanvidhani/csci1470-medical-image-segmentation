@@ -1,6 +1,6 @@
 import argparse
 import os
-from solver import Solver
+#from solver import Solver
 from preprocess import get_data
 #from torch.backends import cudnn
 import random
@@ -58,12 +58,12 @@ def main(config):
                             mode='test',
                             augmentation_prob=0.)
 
-    solver = Solver(train_loader, test_loader)
     """
     
     # Train and sample the images
-    solver.train()
-    solver.test()
+    #solver = Solver(train_loader, test_loader)
+    #solver.train()
+    #solver.test()
 
 
 if __name__ == '__main__':

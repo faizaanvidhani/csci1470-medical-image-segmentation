@@ -3,8 +3,10 @@ from random import shuffle
 import os
 import numpy as np
 import tensorflow as tf
-import tensorflow.contrib.image.rotate as rotate
-import tensorflow.keras.layers.CenterCrop as crop
+from tensorflow.keras import utils
+import tensorflow_addons as tfa
+#import tensorflow_addons.image.rotate as rotate
+#import tensorflow.keras.layers.CenterCrop as tensorflow.keras.layers.CenterCrop
 from PIL import Image
 
 """
@@ -22,7 +24,7 @@ class ImageFolder(tf.keras.utils.Sequence):
 """
 
 
-def getInputLabel(self, input_img, label_img, mode, augmentation_prob):
+def getInputLabel(input_img, label_img, mode, augmentation_prob):
     """
     Returns: Input and Label
     """
@@ -31,18 +33,24 @@ def getInputLabel(self, input_img, label_img, mode, augmentation_prob):
     #filename = input_path.split('_')[-1][:-len(".jpg")]
     #label_path = self.label_paths + 'ISIC_' + filename + '_Segmentation.png'
 
-    input = input_img
-    label = label_img
+    #expanded_label = np.expand_dims(label_img, axis=2)
+    tensor_input = tf.convert_to_tensor(input_img)
+    tensor_label = tf.convert_to_tensor(label_img)
 
-    aspect_ratio = input.size[1]/input.size[0]
+    aspect_ratio = tf.shape(tensor_input)[1]/tf.shape(tensor_input)[0]
     resize_range = random.randint(300,320)
 
-    input = tf.image.resize(input, [int(resize_range*aspect_ratio), resize_range])
-    label = tf.image.resize(label, [int(resize_range*aspect_ratio), resize_range])
+    #print('Input Shape:', input.size)
+    resized_input = tf.image.resize(tensor_input, [int(resize_range*aspect_ratio), resize_range])
+    #print('Label Shape:', label.size)
+    resized_label = tf.image.resize(tensor_label, [int(resize_range*aspect_ratio), resize_range])
     
     p_transform = random.random() # Generate a random number between 0.0 and 1.0
 
-    if mode == 'train' and p_transform <= self.augmentation_prob:
+    input = tensor_to_image(resized_input)
+    label = tensor_to_image(resized_label)
+
+    if mode == 'train' and p_transform <= augmentation_prob:
             
         # Generates 1 of 4 possible rotation degree possibilities
 
@@ -54,16 +62,28 @@ def getInputLabel(self, input_img, label_img, mode, augmentation_prob):
             aspect_ratio = 1/aspect_ratio
 
         random_rot1 = random.randint(-rotation_degree, rotation_degree)
-        input = rotate(random_rot1)
-        label = rotate(random_rot1)
+        if random_rot1 is not 0 or 360:
+            print("randomrot1:", random_rot1)
+            print("input=", input)
+            input = input.rotate(random_rot1)
+            label = label.rotate(random_rot1)
 
+        """
         random_rot2 = random.randint(-10,10)
-        input = rotate(random_rot2)
-        label = rotate(random_rot2)
+        if random_rot2 is not 0:
+            print("randomrot2:", random_rot2)
+            input = input.rotate(input, random_rot2)
+            label = label.rotate(label, random_rot2)
+        """
 
+        """"
         random_crop = random.randint(250,270)
-        input = crop(input, int(random_crop*aspect_ratio), random_crop)
-        label = crop(label, int(random_crop*aspect_ratio), random_crop)
+        crop = tf.keras.layers.CenterCrop(int(random_crop*aspect_ratio), random_crop)
+        input = crop(input)
+        label = crop(label)
+        #input = tf.keras.layers.CenterCrop(input, int(random_crop*aspect_ratio), random_crop)
+        #label = tf.keras.layers.CenterCrop(label, int(random_crop*aspect_ratio), random_crop)
+        """
 
         shift_left = random.randint(0,20)
         shift_up = random.randint(0,20)
@@ -73,6 +93,8 @@ def getInputLabel(self, input_img, label_img, mode, augmentation_prob):
         input = input.crop(box=(shift_left, shift_up, shift_right, shift_down))
         label = label.crop(box=(shift_left, shift_up, shift_right, shift_down))
 
+        label = np.expand_dims(label_img, axis=0)
+        label = tf.convert_to_tensor(label)
         if random.random() > 0.5:
             input = tf.image.flip_up_down(input)
             label = tf.image.flip_up_down(label)
@@ -88,36 +110,25 @@ def getInputLabel(self, input_img, label_img, mode, augmentation_prob):
     label = tf.image.resize(label, [int(256*aspect_ratio)-int(256*aspect_ratio)%16, 256])
 
     # Add blur and noise for further image augmentation 
-    
-    # Converting images to tensor
 
     input = tf.image.convert_image_dtype(input, dtype=tf.float32)
     label = tf.image.convert_image_dtype(label, dtype=tf.float32)
 
-    tf.image.per_image_standardization(input)
+    input = tf.image.per_image_standardization(input)
 
     return input, label
 
-""""
-def get_loader(image_path, image_size, batch_size, num_workers=2, mode='train', augmentation_prob=0.4):
-	"""Builds and returns Dataloader."""
-	dataset = ImageFolder(root=image_path, image_size=image_size, mode=mode,augmentation_prob=augmentation_prob)
-	dataset = tf.data.Dataset.from_tensor_slices(dataset)
-	dataset = dataset.shuffle(buffer_size=dataset.__len__).batch(batch_size, drop_remainder=True)
-	return dataset
-
-    #tf.data.iterator(dataset)
-	#data_loader = data.DataLoader(dataset=dataset,batch_size=batch_size,shuffle=True,num_workers=num_workers)
-"""
+def tensor_to_image(tensor):
+    tensor = tensor*255
+    tensor = np.array(tensor, dtype=np.uint8)
+    return Image.fromarray(tensor)
 
 def get_data(input_path, label_path, num_inputs, image_size=224, mode='train', augmentation_prob=0.4):
-    # Mode specified in main file
-    # Augmentation prob=0.4 for mode=train and 0 for mode=test
     input = []
     label = []
     for file_name in os.listdir(input_path):
-        input_img = Image.open(input_path + file_name)
-        label_img = Image.open(input_path + file_name[:-len(".jpg")] + '_Segmentation.png')
+        input_img = tf.keras.preprocessing.image.load_img(input_path + '/' + file_name)
+        label_img = tf.keras.preprocessing.image.load_img(label_path + '/' + file_name[:-len(".jpg")] + '_Segmentation.png')
         processed_input, processed_label = getInputLabel(input_img, label_img, mode=mode, augmentation_prob=augmentation_prob)
         input.append(processed_input)
         label.append(processed_label)

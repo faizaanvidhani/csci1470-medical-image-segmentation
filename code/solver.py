@@ -56,8 +56,8 @@ class Solver(object):
 	def build_model(self):
 		"""Build generator and discriminator."""
 		self.unet = R2U_Net(img_ch=3,output_ch=1,t=self.t)
-        optimizer = optimizers.Adam(self.lr, self.beta1, self.beta2)
-        self.unet.to(self.device)
+		self.optimizer = optimizers.Adam(self.lr, self.beta1, self.beta2)
+		self.unet.to(self.device)
 
 		# self.print_network(self.unet, self.model_type)
 

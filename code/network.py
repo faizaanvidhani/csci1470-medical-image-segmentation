@@ -7,9 +7,9 @@ import tensorflow as tf
 
 def init_weights(net, init_type='normal', gain=0.02):
 
-    '''
-#the init funcition may not be compeletely necessary
-    '''
+    
+    the init function may not be compeletely necessary
+    
     def init_func(m):
         classname = m.__class__.__name__
         if hasattr(m, 'weight') and (classname.find('Conv') != -1 or classname.find('Linear') != -1):
@@ -58,9 +58,9 @@ class conv_block(tf.keras.Model):
 
 
 
-    def forward(self,x):
-        x = self.conv(x)
-        return x
+def forward(self,x):
+	x = self.conv(x)
+	return x
 
 
 class up_conv(tf.keras.Model):
@@ -167,9 +167,9 @@ class R2U_Net(tf.keras.Model):
         self.Conv_1x1 = tf.nn.conv2d(64,output_ch,kernel_size=1,stride=1,padding=0)
 
 
-    def forward(self,x):
-        # encoding path
-        x1 = self.RRCNN1(x)
+def forward(self,x):
+	# encoding path
+	x1 = self.RRCNN1(x)
 
         x2 = self.Maxpool(x1)
         x2 = self.RRCNN2(x2)

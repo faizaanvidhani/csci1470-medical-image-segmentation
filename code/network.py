@@ -3,14 +3,8 @@ import tensorflow as tf
 #import torch.nn.functional as F
 #from torch.nn import init 
 
-'''
 
-def init_weights(net, init_type='normal', gain=0.02):
-
-    '''
-#the init funcition may not be compeletely necessary
-    '''
-    def init_func(m):
+    def init_func(m):
         classname = m.__class__.__name__
         if hasattr(m, 'weight') and (classname.find('Conv') != -1 or classname.find('Linear') != -1):
             if init_type == 'normal':

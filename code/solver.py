@@ -15,11 +15,13 @@ import csv
 
 
 class Solver(object):
-	def __init__(self, train_loader, test_loader):
+	def __init__(self, train_inputs, train_labels, test_inputs, test_labels):
 
 		# Data loader
-		self.train_loader = train_loader
-		self.test_loader = test_loader
+		self.train_inputs = train_inputs
+		self.train_labels = train_labels
+		self.test_inputs = test_inputs 
+		self.test_labels = test_labels 
 
 		# Models
 		self.model = R2U_Net(self.img_ch,self.output_ch,t=self.t)
@@ -47,16 +49,15 @@ class Solver(object):
 		self.unet.to(self.device)
 		self.model_type = 'R2U_Net'
 		self.t = 3
-		self.build_model()
 
-	def print_network(self, model, name):
-		"""Print out the network information."""
+""" 	def print_network(self, model, name):
+		Print out the network information.
 		num_params = 0
 		for p in model.parameters():
 			num_params += p.numel()
 		print(model)
 		print(name)
-		print("The number of parameters: {}".format(num_params))
+		print("The number of parameters: {}".format(num_params)) """
 
 """ 	def to_data(self, x):
 		#convert variable to tensor
@@ -64,16 +65,17 @@ class Solver(object):
 			x = x.cpu()
 		return x.data """
 
-	def reset_grad(self):
-		"""Zero the gradient buffers."""
-		self.unet.zero_grad()
+""" 	def reset_grad(self):
+		Zero the gradient buffers.
+		self.unet.zero_grad() """
 
-	def compute_accuracy(self,SR,GT):
+""" 	def compute_accuracy(self,SR,GT):
 		SR_flat = SR.view(-1)
 		GT_flat = GT.view(-1)
 
 		acc = GT_flat.data.cpu()==(SR_flat.data.cpu()>0.5)
-
+		return acc """
+	
 	def tensor2img(self,x):
 		img = (x[:,0,:,:]>x[:,1,:,:]).float()
 		img = img*255

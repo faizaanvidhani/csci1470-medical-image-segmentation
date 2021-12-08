@@ -61,7 +61,7 @@ def main(config):
     """
     
     # Train and sample the images
-    #solver = Solver(train_loader, test_loader)
+    #solver = Solver(train_inputs, train_labels, test_inputs, test_labels)
     #solver.train()
     #solver.test()
 

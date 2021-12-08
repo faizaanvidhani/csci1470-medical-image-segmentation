@@ -24,11 +24,13 @@ class Recurrent_block(tf.keras.Model):
         super(Recurrent_block,self).__init__()
         self.t = t
         self.ch_out = ch_out
+        self.filter = tf.Variable(tf.random.truncated_normal([3,3,ch_out,ch_out],stddev=0.1))
         self.conv = tf.keras.Sequential(
-            tf.nn.conv2d(ch_out,ch_out,kernel_size=3,stride=1,padding=1,bias=True)
-            tf.batch_normalization(ch_out),
-            tf.nn.relu()
+            tf.keras.layers.Conv2D(filters=ch_out,kernel_size=3,strides = (2,2),padding='valid'),
+            tf.keras.layers.BatchNormalization(),
+            #tf.keras.layers.ReLU()
         )
+        
 
     def forward(self,x):
         for i in range(self.t):
@@ -58,7 +60,7 @@ class single_conv(tf.keras.Model):
     def __init__(self,ch_in,ch_out):
         super(single_conv,self).__init__()
         self.conv = tf.keras.Sequential(
-            tf.nn.conv2d(ch_in,ch_out,kernel_size=3,stride=1,padding=1,bias=True)
+            tf.nn.conv2d(ch_in,ch_out,kernel_size=3,stride=1,padding=1,bias=True),
             tf.nn.BatchNorm2d(ch_out),
             tf.nn.ReLU(inplace=True)
         )
@@ -72,7 +74,7 @@ class R2U_Net(tf.keras.Model):
     def __init__(self,img_ch=3,output_ch=1,t=2):
         super(R2U_Net,self).__init__()
 
-        self.Maxpool = tf.nn.MaxPool2d(kernel_size=2,stride=2)
+        self.Maxpool = tf.keras.layers.MaxPool2D(pool_size = (2,2), strides=None, padding= 'valid')
         self.Upsample = tf.keras.layers.UpSampling2D(size=(2,2))
 
         self.RRCNN1 = RRCNN_block(ch_in=img_ch,ch_out=64,t=t)
@@ -96,6 +98,7 @@ class R2U_Net(tf.keras.Model):
 
     def forward(self,x):
         #encoding path
+        print("HI")
         x1 = self.RRCNN1(x)
 
         x2 = self.Maxpool(x1)

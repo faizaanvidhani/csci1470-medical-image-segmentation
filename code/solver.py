@@ -33,10 +33,9 @@ class Solver(object):
 		self.output_ch = 1
 		self.t = 3
 		
-		self.model = R2U_Net(self.img_ch,self.output_ch,t=self.t)
+		self.unet = R2U_Net(self.img_ch,self.output_ch,t=self.t)
 		self.optimizer = optimizers.Adam(self.lr, self.beta1, self.beta2)
 		
-		self.criterion = tf.keras.losses.BinaryCrossEntropy()
 		self.augmentation_prob = 0.4
 
 		
@@ -51,7 +50,7 @@ class Solver(object):
 		self.val_step = 2
 
 		self.device = tf.device('cpu')
-		self.unet.to(self.device)
+		#self.unet.to(self.device)
 		self.model_type = 'R2U_Net'
 		
 	def tensor2img(self,x):
@@ -71,7 +70,7 @@ class Solver(object):
 		
 		for epoch in range(self.num_epochs):
 
-			self.unet.train(True)
+			#self.unet.train(True)
 			epoch_loss = 0
 			
 			acc = 0.	# Accuracy
@@ -88,26 +87,27 @@ class Solver(object):
 
 
 				images = self.train_inputs[i:i+self.batch_size]
-				labels = self.train_labels[i: i+self.batch_size]
+				print('Images:  ', images)
+				GT = self.train_labels[i: i+self.batch_size]
 
 				
 				# SR : Segmentation Result
-				unet = self.model
-				forward = unet.forward(images)
+				SR = self.unet.forward(images)
+				#forward = SR.forward(images)
 				SR_probs = activations.sigmoid(SR)
-				SR_flat = SR_probs.view(SR_probs.size(0),-1)
+				#SR_flat = SR_probs.view(SR_probs.size(0),-1)
 
-				GT_flat = GT.view(GT.size(0),-1)
+				#GT_flat = GT.view(GT.size(0),-1)
 
 				# Backprop + optimize
 				""" self.reset_grad()
 				loss.backward()
 				self.optimizer.step() """
 				with tf.GradientTape() as tape:
-					loss = self.criterion(SR_flat,GT_flat)
-					epoch_loss += loss.item()
-				gradients = tape.gradient(loss, self.model.trainable_variables)
-				self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
+					loss = tf.keras.losses.CategoricalCrossentropy(GT,SR_probs)
+					epoch_loss += loss
+				gradients = tape.gradient(loss, self.unet.trainable_variables)
+				self.optimizer.apply_gradients(zip(gradients, self.unet.trainable_variables))
 
 				acc += get_accuracy(SR,GT)
 				SE += get_sensitivity(SR,GT)

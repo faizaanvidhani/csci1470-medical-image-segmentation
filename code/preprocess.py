@@ -94,6 +94,7 @@ def getInputLabel(input_img, label_img, mode, augmentation_prob):
         label = label.crop(box=(shift_left, shift_up, shift_right, shift_down))
 
         label = np.expand_dims(label_img, axis=0)
+        print('Label shape', label.shape )
         label = tf.convert_to_tensor(label)
         if random.random() > 0.5:
             input = tf.image.flip_up_down(input)

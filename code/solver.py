@@ -43,7 +43,8 @@ class Solver(object):
 		# Training settings
 		self.num_epochs = 100
 		self.num_epochs_decay = 70
-		self.batch_size = 10
+		self.batch_size = 2
+
 
 		# Step size
 		self.log_step = 2
@@ -87,13 +88,13 @@ class Solver(object):
 
 
 				images = self.train_inputs[i:i+self.batch_size]
-				print('Images:  ', images)
+				#print('Images:  ', images)
 				GT = self.train_labels[i: i+self.batch_size]
 
 				
 				# SR : Segmentation Result
-				SR = self.unet.forward(images)
-				#forward = SR.forward(images)
+				SR = self.unet(images)
+				print("sr shape", SR.shape)
 				SR_probs = activations.sigmoid(SR)
 				#SR_flat = SR_probs.view(SR_probs.size(0),-1)
 
@@ -104,7 +105,8 @@ class Solver(object):
 				loss.backward()
 				self.optimizer.step() """
 				with tf.GradientTape() as tape:
-					loss = tf.keras.losses.CategoricalCrossentropy(GT,SR_probs)
+					loss = tf.keras.metrics.categorical_crossentropy(GT,SR_probs)
+					print('loss', loss)
 					epoch_loss += loss
 				gradients = tape.gradient(loss, self.unet.trainable_variables)
 				self.optimizer.apply_gradients(zip(gradients, self.unet.trainable_variables))

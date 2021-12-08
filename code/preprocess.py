@@ -76,13 +76,18 @@ def getInputLabel(input_img, label_img, mode, augmentation_prob):
             label = tf.image.flip_left_right(label)
 
 
-    input = tf.image.resize(input, [int(256*aspect_ratio)-int(256*aspect_ratio)%16, 256])
-    label = tf.image.resize(label, [int(256*aspect_ratio)-int(256*aspect_ratio)%16, 256])
+    #input = tf.image.resize(input, [int(256*aspect_ratio)-int(256*aspect_ratio)%16, 256])
+    #label = tf.image.resize(label, [int(256*aspect_ratio)-int(256*aspect_ratio)%16, 256])
 
+    input = tf.image.resize(input, [256, 256])
+    label = tf.image.resize(label, [256, 256])
+
+    """
     input = tensor_to_image(input)
     label = tensor_to_image(label)
     input.show()
     label.show()
+    """
 
     return input, label
 
@@ -107,11 +112,18 @@ def get_data(input_path, label_path, num_inputs, image_size=224, mode='train', a
     """
     inputs = []
     labels = []
+    count = 0
     for file_name in os.listdir(input_path):
+        count += 1
         input_img = tf.keras.preprocessing.image.load_img(input_path + '/' + file_name)
-        input_img.show()
         label_img = tf.keras.preprocessing.image.load_img(label_path + '/' + file_name[:-len(".jpg")] + '_Segmentation.png')
         processed_input, processed_label = getInputLabel(input_img, label_img, mode=mode, augmentation_prob=augmentation_prob)
         inputs.append(processed_input)
         labels.append(processed_label)
-    return inputs, labels
+        if count is 10:
+            break
+    new_inputs = tf.stack(inputs, axis=0)
+    new_labels = tf.stack(labels, axis=0)
+    #print("new_inputs shape:", tf.shape(new_inputs))
+    #print("new_labels shape:", tf.shape(new_labels))
+    return new_inputs, new_labels

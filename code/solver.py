@@ -23,18 +23,23 @@ class Solver(object):
 		self.test_inputs = test_inputs 
 		self.test_labels = test_labels 
 
-		# Models
-		self.model = R2U_Net(self.img_ch,self.output_ch,t=self.t)
-		self.optimizer = optimizers.Adam(self.lr, self.beta1, self.beta2)
-		self.img_ch = 3
-		self.output_ch = 1
-		self.criterion = tf.keras.losses.BinaryCrossEntropy()
-		self.augmentation_prob = 0.4
-
 		# Hyper-parameters
 		self.lr = 0.0002
 		self.beta1 = 0.5
 		self.beta2 = 0.999
+
+		# Model
+		self.img_ch = 3
+		self.output_ch = 1
+		self.t = 3
+		
+		self.model = R2U_Net(self.img_ch,self.output_ch,t=self.t)
+		self.optimizer = optimizers.Adam(self.lr, self.beta1, self.beta2)
+		
+		self.criterion = tf.keras.losses.BinaryCrossEntropy()
+		self.augmentation_prob = 0.4
+
+		
 
 		# Training settings
 		self.num_epochs = 100
@@ -48,7 +53,7 @@ class Solver(object):
 		self.device = tf.device('cpu')
 		self.unet.to(self.device)
 		self.model_type = 'R2U_Net'
-		self.t = 3
+		
 
 """ 	def print_network(self, model, name):
 		Print out the network information.

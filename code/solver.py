@@ -10,7 +10,7 @@ from tensorflow.keras import optimizers
 #import torch.nn.functional as F
 import tensorflow.keras.activations as activations
 from evaluation import *
-from network import R2U_Net
+from network2 import R2U_Net
 import csv
 
 
@@ -54,33 +54,6 @@ class Solver(object):
 		self.unet.to(self.device)
 		self.model_type = 'R2U_Net'
 		
-
-""" 	def print_network(self, model, name):
-		Print out the network information.
-		num_params = 0
-		for p in model.parameters():
-			num_params += p.numel()
-		print(model)
-		print(name)
-		print("The number of parameters: {}".format(num_params)) """
-
-""" 	def to_data(self, x):
-		#convert variable to tensor
-		if torch.cuda.is_available():
-			x = x.cpu()
-		return x.data """
-
-""" 	def reset_grad(self):
-		Zero the gradient buffers.
-		self.unet.zero_grad() """
-
-""" 	def compute_accuracy(self,SR,GT):
-		SR_flat = SR.view(-1)
-		GT_flat = GT.view(-1)
-
-		acc = GT_flat.data.cpu()==(SR_flat.data.cpu()>0.5)
-		return acc """
-	
 	def tensor2img(self,x):
 		img = (x[:,0,:,:]>x[:,1,:,:]).float()
 		img = img*255
@@ -110,14 +83,17 @@ class Solver(object):
 			DC = 0.		# Dice Coefficient
 			length = 0
 
-			for i, (images, GT) in enumerate(self.train_loader):#no train loader
+			for i in range(0,len(self.train_inputs),self.batch_size):#no train loader
 				# GT : Ground Truth
 
-				images = images.to(self.device)
-				GT = GT.to(self.device)
 
+				images = self.train_inputs[i:i+self.batch_size]
+				labels = self.train_labels[i: i+self.batch_size]
+
+				
 				# SR : Segmentation Result
-				SR = self.unet(images)
+				unet = self.model
+				forward = unet.forward(images)
 				SR_probs = activations.sigmoid(SR)
 				SR_flat = SR_probs.view(SR_probs.size(0),-1)
 

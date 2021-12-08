@@ -4,9 +4,6 @@ import os
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import utils
-import tensorflow_addons as tfa
-#import tensorflow_addons.image.rotate as rotate
-#import tensorflow.keras.layers.CenterCrop as tensorflow.keras.layers.CenterCrop
 from PIL import Image
 
 def getInputLabel(input_img, label_img, mode, augmentation_prob):
@@ -36,9 +33,9 @@ def getInputLabel(input_img, label_img, mode, augmentation_prob):
     input = tensor_to_image(resized_input)
     label = tensor_to_image(resized_label)
     
-    p_transform = random.random() # Generate a random number between 0.0 and 1.0 to be compared to augmentation_prob
+    p_transform = 0 #random.random() # Generate a random number between 0.0 and 1.0 to be compared to augmentation_prob
     if mode == 'train' and p_transform <= augmentation_prob:
-            
+
         rotation_possibilities =[0, 90, 180, 270]
         rotation_option = random.randint(0,3)
         rotation_degree = rotation_possibilities[rotation_option]
@@ -46,27 +43,14 @@ def getInputLabel(input_img, label_img, mode, augmentation_prob):
         if rotation_degree==90 or rotation_degree==270:
             aspect_ratio = 1/aspect_ratio
 
+        # Rotating images twice with a randomly determined number of degrees
         random_rot1 = random.randint(-rotation_degree, rotation_degree)
-        if random_rot1 is not 0 or 360:
-            input = input.rotate(random_rot1)
-            label = label.rotate(random_rot1)
+        input = input.rotate(random_rot1)
+        label = label.rotate(random_rot1)
 
-        """
         random_rot2 = random.randint(-10,10)
-        if random_rot2 is not 0:
-            print("randomrot2:", random_rot2)
-            input = input.rotate(input, random_rot2)
-            label = label.rotate(label, random_rot2)
-        """
-
-        """"
-        random_crop = random.randint(250,270)
-        crop = tf.keras.layers.CenterCrop(int(random_crop*aspect_ratio), random_crop)
-        input = crop(input)
-        label = crop(label)
-        #input = tf.keras.layers.CenterCrop(input, int(random_crop*aspect_ratio), random_crop)
-        #label = tf.keras.layers.CenterCrop(label, int(random_crop*aspect_ratio), random_crop)
-        """
+        input = input.rotate(random_rot2)
+        label = label.rotate(random_rot2)
 
         shift_left = random.randint(0,20)
         shift_up = random.randint(0,20)
@@ -79,6 +63,10 @@ def getInputLabel(input_img, label_img, mode, augmentation_prob):
         input = tf.convert_to_tensor(input)
         label = tf.convert_to_tensor(label)
 
+        random_crop = random.uniform(0.6,0.9)
+        input = tf.image.central_crop(input, random_crop)
+        label = tf.image.central_crop(label, random_crop)
+
         if random.random() > 0.5:
             input = tf.image.flip_up_down(input)
             label = tf.image.flip_up_down(label)
@@ -86,24 +74,23 @@ def getInputLabel(input_img, label_img, mode, augmentation_prob):
         if random.random() > 0.5:
             input = tf.image.flip_left_right(input)
             label = tf.image.flip_left_right(label)
-    
-        input = tf.image.adjust_contrast(input, 0.2)
-        label = tf.image.adjust_contrast(label, 0.2)
+
 
     input = tf.image.resize(input, [int(256*aspect_ratio)-int(256*aspect_ratio)%16, 256])
     label = tf.image.resize(label, [int(256*aspect_ratio)-int(256*aspect_ratio)%16, 256])
 
-    # Add blur and noise for further image augmentation 
-
-    input = tf.image.convert_image_dtype(input, dtype=tf.float32)
-    label = tf.image.convert_image_dtype(label, dtype=tf.float32)
-
-    input = tf.image.per_image_standardization(input)
+    input = tensor_to_image(input)
+    label = tensor_to_image(label)
+    input.show()
+    label.show()
 
     return input, label
 
 def tensor_to_image(tensor):
-    tensor = tensor*255
+    """
+    :param tensor: An image in the form of a tensor
+    :return: An image in the form of a PIL Image instance
+    """
     tensor = np.array(tensor, dtype=np.uint8)
     return Image.fromarray(tensor)
 
@@ -122,6 +109,7 @@ def get_data(input_path, label_path, num_inputs, image_size=224, mode='train', a
     labels = []
     for file_name in os.listdir(input_path):
         input_img = tf.keras.preprocessing.image.load_img(input_path + '/' + file_name)
+        input_img.show()
         label_img = tf.keras.preprocessing.image.load_img(label_path + '/' + file_name[:-len(".jpg")] + '_Segmentation.png')
         processed_input, processed_label = getInputLabel(input_img, label_img, mode=mode, augmentation_prob=augmentation_prob)
         inputs.append(processed_input)

@@ -66,6 +66,10 @@ def main(config):
     #solver.test()
 
 
+
+'''
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -102,3 +106,4 @@ if __name__ == '__main__':
 
     config = parser.parse_args()
     main(config)
+'''

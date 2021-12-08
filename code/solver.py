@@ -105,7 +105,7 @@ class Solver(object):
 			DC = 0.		# Dice Coefficient
 			length = 0
 
-			for i, (images, GT) in enumerate(self.train_loader):
+			for i, (images, GT) in enumerate(self.train_loader):#no train loader
 				# GT : Ground Truth
 
 				images = images.to(self.device)

@@ -123,22 +123,22 @@ class R2U_Net(tf.keras.Model):
         # decoding + concat path
         d5 = self.Up5(x5)
         #d5 = tf.concat((x4,d5),axis=0)
-        d5 = x4 + d5
+        #d5 = x4 + d5
         d5 = self.Up_RRCNN5(d5)
 
         d4 = self.Up4(d5)
         #d4 = tf.concat((x3,d4),axis=0)
-        d4 = x3 + d4
+        #d4 = x3 + d4
         d4 = self.Up_RRCNN4(d4)
 
         d3 = self.Up3(d4)
         #d3 = tf.concat((x2,d3),axis=0)
-        d3 = x2 + d3
+        #d3 = x2 + d3
         d3 = self.Up_RRCNN3(d3)
 
         d2 = self.Up2(d3)
         #d2 = tf.concat((x1,d2),axis=0)
-        d2 = x1 + d2
+        #d2 = x1 + d2
         d2 = self.Up_RRCNN2(d2)
 
         d1 = self.Conv_1x1(d2)

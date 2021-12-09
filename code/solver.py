@@ -94,9 +94,13 @@ class Solver(object):
 				
 				# SR : Segmentation Result
 				SR = self.unet(images)
-				print("sr shape", SR.shape)
 				SR_probs = activations.sigmoid(SR)
+				SR_flat = tf.reshape(SR_probs, [tf.shape(SR_probs)[0],-1])
+				print("SR_flat shape:", tf.shape(SR_flat))
 				#SR_flat = SR_probs.view(SR_probs.size(0),-1)
+				GT_flat = tf.reshape(GT, [tf.shape(GT)[0], -1])
+				print("SR_flat Shape:", tf.shape(SR_flat))
+				print("GT_flat Shape:", tf.shape(GT_flat))
 
 				#GT_flat = GT.view(GT.size(0),-1)
 
@@ -105,7 +109,7 @@ class Solver(object):
 				loss.backward()
 				self.optimizer.step() """
 				with tf.GradientTape() as tape:
-					loss = tf.keras.metrics.categorical_crossentropy(GT,SR_probs)
+					loss = tf.keras.metrics.categorical_crossentropy(GT_flat,SR_flat)
 					print('loss', loss)
 					epoch_loss += loss
 				gradients = tape.gradient(loss, self.unet.trainable_variables)

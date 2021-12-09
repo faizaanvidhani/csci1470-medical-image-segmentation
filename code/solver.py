@@ -11,6 +11,8 @@ from tensorflow.keras import optimizers
 import tensorflow.keras.activations as activations
 from evaluation import *
 from network2 import R2U_Net
+from PIL import Image
+from preprocess import tensor_to_image
 import csv
 
 
@@ -38,12 +40,10 @@ class Solver(object):
 		
 		self.augmentation_prob = 0.4
 
-		
-
 		# Training settings
-		self.num_epochs = 100
+		self.num_epochs = 1
 		self.num_epochs_decay = 70
-		self.batch_size = 2
+		self.batch_size = 10
 
 
 		# Step size
@@ -67,11 +67,9 @@ class Solver(object):
 		#===========================================================================================#
 		
 		# Train for Encoder
-		lr = self.lr
 		
 		for epoch in range(self.num_epochs):
 
-			#self.unet.train(True)
 			epoch_loss = 0
 			
 			acc = 0.	# Accuracy
@@ -83,69 +81,69 @@ class Solver(object):
 			DC = 0.		# Dice Coefficient
 			length = 0
 
-			for i in range(0,len(self.train_inputs),self.batch_size):#no train loader
+			for i in range(0,len(self.train_inputs),self.batch_size):
 				# GT : Ground Truth
-
 
 				images = self.train_inputs[i:i+self.batch_size]
 				#print('Images:  ', images)
 				GT = self.train_labels[i: i+self.batch_size]
 
-				
-				# SR : Segmentation Result
-				SR = self.unet(images)
-				SR_probs = activations.sigmoid(SR)
-				SR_flat = tf.reshape(SR_probs, [tf.shape(SR_probs)[0],-1])
-				print("SR_flat shape:", tf.shape(SR_flat))
-				#SR_flat = SR_probs.view(SR_probs.size(0),-1)
-				GT_flat = tf.reshape(GT, [tf.shape(GT)[0], -1])
-				print("SR_flat Shape:", tf.shape(SR_flat))
-				print("GT_flat Shape:", tf.shape(GT_flat))
-
-				#GT_flat = GT.view(GT.size(0),-1)
-
 				# Backprop + optimize
-				""" self.reset_grad()
-				loss.backward()
-				self.optimizer.step() """
 				with tf.GradientTape() as tape:
-					loss = tf.keras.metrics.categorical_crossentropy(GT_flat,SR_flat)
-					print('loss', loss)
-					epoch_loss += loss
-				gradients = tape.gradient(loss, self.unet.trainable_variables)
+					# SR : Segmentation Result
+					SR = self.unet(images)
+					#print("SR", SR)
+					#SR_probs = activations.sigmoid(SR)
+					SR_probs = activations.softmax(SR)
+					#print("SR probs", SR_probs)
+					SR_flat = tf.reshape(SR_probs, [tf.shape(SR_probs)[0],-1])
+					GT_flat = tf.reshape(GT, [tf.shape(GT)[0], -1])
+					#print("SR_flat Shape:", tf.shape(SR_flat))
+					#print("GT_flat Shape:", tf.shape(GT_flat))
+					#loss = tf.keras.metrics.binary_crossentropy(GT_flat, SR_flat)
+					bce = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+					loss = bce(GT_flat, SR_flat)
+					#loss = tf.keras.metrics.binary_crossentropy(GT, SR_probs)
+					avg_loss = tf.reduce_mean(loss)
+					print("loss is", avg_loss)
+					epoch_loss += avg_loss
+
+				gradients = tape.gradient(avg_loss, self.unet.trainable_variables)
 				self.optimizer.apply_gradients(zip(gradients, self.unet.trainable_variables))
 
 				acc += get_accuracy(SR,GT)
-				SE += get_sensitivity(SR,GT)
+				""" SE += get_sensitivity(SR,GT)
 				SP += get_specificity(SR,GT)
 				PC += get_precision(SR,GT)
 				F1 += get_F1(SR,GT)
 				JS += get_JS(SR,GT)
-				DC += get_DC(SR,GT)
-				length += images.size(0)
+				DC += get_DC(SR,GT) """
+				length += 1
 
 			acc = acc/length
-			SE = SE/length
+			print("accuracy is", acc)
+			print("length is", length)
+			""" SE = SE/length
 			SP = SP/length
 			PC = PC/length
 			F1 = F1/length
 			JS = JS/length
-			DC = DC/length
+			DC = DC/length """
 
 			# Print the log info
-			print('Epoch [%d/%d], Loss: %.4f, \n[Training] Acc: %.4f, SE: %.4f, SP: %.4f, PC: %.4f, F1: %.4f, JS: %.4f, DC: %.4f' % (
+			""" print('Epoch [%d/%d], Loss: %.4f, \n[Training] Acc: %.4f, SE: %.4f, SP: %.4f, PC: %.4f, F1: %.4f, JS: %.4f, DC: %.4f' % (
 					epoch+1, self.num_epochs, \
 					epoch_loss,\
 					acc,SE,SP,PC,F1,JS,DC))
-
+ """
 		
 
 			# Decay learning rate
-			if (epoch+1) > (self.num_epochs - self.num_epochs_decay):
+			""" if (epoch+1) > (self.num_epochs - self.num_epochs_decay):
 				lr -= (self.lr / float(self.num_epochs_decay))
 				for param_group in self.optimizer.param_groups:
 					param_group['lr'] = lr
-				print ('Decay learning rate to lr: {}.'.format(lr))
+				print ('Decay learning rate to lr: {}.'.format(lr)) """
 		
 					
 			#===================================== Test ====================================#
@@ -156,7 +154,7 @@ class Solver(object):
 		self.unet.load_state_dict(tf.io.read_file(unet_path))
 		
 		self.unet.train(False) """
-		self.unet.eval()
+		#self.unet.eval()
 
 		acc = 0.	# Accuracy
 		SE = 0.		# Sensitivity (Recall)
@@ -166,28 +164,40 @@ class Solver(object):
 		JS = 0.		# Jaccard Similarity
 		DC = 0.		# Dice Coefficient
 		length=0
-		for i, (images, GT) in enumerate(self.test_loader):
+		for i in range(0,len(self.test_inputs),self.batch_size):
+			# GT : Ground Truth
 
-			images = images.to(self.device)
-			GT = GT.to(self.device)
-			SR = activations.sigmoid(self.unet(images))
+			images = self.test_inputs[i:i+self.batch_size]
+			#print('Images:  ', images)
+			GT = self.test_labels[i: i+self.batch_size]
+
+			SR = activations.softmax(self.unet(images))
+
+			#Displaying Images
+			SR_image = tensor_to_image(SR[0])
+			GT_image = tensor_to_image(GT[0])
+			SR_image.show()
+			GT_image.show()
+
+			
 			acc += get_accuracy(SR,GT)
-			SE += get_sensitivity(SR,GT)
+			""" SE += get_sensitivity(SR,GT)
 			SP += get_specificity(SR,GT)
 			PC += get_precision(SR,GT)
 			F1 += get_F1(SR,GT)
 			JS += get_JS(SR,GT)
-			DC += get_DC(SR,GT)
+			DC += get_DC(SR,GT) """
 					
-			length += images.size(0)
+			length += 1
 				
 		acc = acc/length
-		SE = SE/length
+		print(acc)
+		""" SE = SE/length
 		SP = SP/length
 		PC = PC/length
 		F1 = F1/length
 		JS = JS/length
-		DC = DC/length
+		DC = DC/length """
 		#unet_score = JS + DC
 
 

@@ -120,7 +120,7 @@ def get_data(input_path, label_path, num_inputs, image_size=224, mode='train', a
         processed_input, processed_label = getInputLabel(input_img, label_img, mode=mode, augmentation_prob=augmentation_prob)
         inputs.append(processed_input)
         labels.append(processed_label)
-        if count is 10:
+        if count is 900:
             break
     new_inputs = tf.stack(inputs, axis=0)
     new_labels = tf.stack(labels, axis=0)

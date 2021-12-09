@@ -6,9 +6,10 @@ import tensorflow as tf
 
 def get_accuracy(SR,GT,threshold=0.5):
     SR = SR > threshold
-    GT = GT == tf.math.maximum(GT)
-    corr = tf.math.reduce_sum(SR==GT)
-    tensor_size = SR.size(0)*SR.size(1)*SR.size(2)*SR.size(3)
+    GT = GT == tf.math.reduce_max(GT)
+    boolarr = SR == GT
+    corr = tf.math.count_nonzero(boolarr)
+    tensor_size = SR.shape[0]*SR.shape[1]*SR.shape[2]*SR.shape[3]
     acc = float(corr)/float(tensor_size)
 
     return acc
@@ -16,20 +17,21 @@ def get_accuracy(SR,GT,threshold=0.5):
 def get_sensitivity(SR,GT,threshold=0.5):
     # Sensitivity == Recall
     SR = SR > threshold
-    GT = GT == tf.math.maximum(GT)
+    GT = GT == tf.math.reduce_max(GT)
 
     # TP : True Positive
     # FN : False Negative
-    TP = ((SR==1)+(GT==1))==2
-    FN = ((SR==0)+(GT==1))==2
+    TP = (tf.math.count_nonzero(SR) + tf.math.count_nonzero(GT)) == 2
+    TP = ((SR==True)+(GT==True))==2
+    FN = ((SR==False)+(GT==True))==2
 
-    SE = float(tf.math.maximum(TP))/(float(tf.math.reduce_sum(TP+FN)) + 1e-6)     
+    SE = float(tf.math.reduce_max(TP))/(float(tf.math.reduce_sum(TP+FN)) + 1e-6)     
     
     return SE
 
 def get_specificity(SR,GT,threshold=0.5):
     SR = SR > threshold
-    GT = GT == tf.math.maximum(GT)
+    GT = GT == tf.math.reduce_max(GT)
 
     # TN : True Negative
     # FP : False Positive
@@ -42,7 +44,7 @@ def get_specificity(SR,GT,threshold=0.5):
 
 def get_precision(SR,GT,threshold=0.5):
     SR = SR > threshold
-    GT = GT == tf.math.maximum(GT)
+    GT = GT == tf.math.reduce_max(GT)
 
     # TP : True Positive
     # FP : False Positive
@@ -65,7 +67,7 @@ def get_F1(SR,GT,threshold=0.5):
 def get_JS(SR,GT,threshold=0.5):
     # JS : Jaccard similarity
     SR = SR > threshold
-    GT = GT == tf.math.maximum(GT)
+    GT = GT == tf.math.reduce_max(GT)
     
     Inter = tf.math.reduce_sum((SR+GT)==2)
     Union = tf.math.reduce_sum((SR+GT)>=1)
@@ -77,7 +79,7 @@ def get_JS(SR,GT,threshold=0.5):
 def get_DC(SR,GT,threshold=0.5):
     # DC : Dice Coefficient
     SR = SR > threshold
-    GT = GT == tf.math.maximum(GT)
+    GT = GT == tf.math.reduce_max(GT)
 
     Inter = tf.math.reduce_sum((SR+GT)==2)
     DC = float(2*Inter)/(float(tf.math.reduce_sum(SR)+tf.math.reduce_sum(GT)) + 1e-6)

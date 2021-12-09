@@ -12,7 +12,7 @@ class up_conv(tf.keras.Model):
             tf.keras.layers.UpSampling2D(size=(2,2)),
             # stride is 1 and padding is 1
             tf.keras.layers.Conv2D(filters=ch_out,kernel_size=3,strides=(1,1),padding='same',use_bias=True),
-            tf.keras.layers.BatchNormalization(),
+            #tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Activation('relu')
         ])
 
@@ -30,7 +30,7 @@ class Recurrent_block(tf.keras.Model):
         #self.filter = tf.Variable(tf.random.truncated_normal([3,3,ch_out,ch_out],stddev=0.1))
         self.conv = tf.keras.Sequential([
             tf.keras.layers.Conv2D(filters=ch_out,kernel_size=3,strides=(1,1),padding='same',use_bias=True),
-            tf.keras.layers.BatchNormalization(),
+            #tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Activation('relu')
         ])
         

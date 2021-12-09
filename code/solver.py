@@ -111,18 +111,18 @@ class Solver(object):
 				gradients = tape.gradient(avg_loss, self.unet.trainable_variables)
 				self.optimizer.apply_gradients(zip(gradients, self.unet.trainable_variables))
 
-				acc += get_accuracy(SR,GT)
+				#acc += get_accuracy(SR,GT)
 				""" SE += get_sensitivity(SR,GT)
 				SP += get_specificity(SR,GT)
 				PC += get_precision(SR,GT)
 				F1 += get_F1(SR,GT)
 				JS += get_JS(SR,GT)
 				DC += get_DC(SR,GT) """
-				length += 1
+				#length += 1
 
-			acc = acc/length
-			print("accuracy is", acc)
-			print("length is", length)
+			#acc = acc/length
+			#print("accuracy is", acc)
+			#print("length is", length)
 			""" SE = SE/length
 			SP = SP/length
 			PC = PC/length
@@ -191,7 +191,7 @@ class Solver(object):
 			length += 1
 				
 		acc = acc/length
-		print(acc)
+		print("final acc is", acc)
 		""" SE = SE/length
 		SP = SP/length
 		PC = PC/length

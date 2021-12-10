@@ -1,18 +1,31 @@
-#import torch
 import tensorflow as tf
+from preprocess import tensor_to_image
 
 # SR : Segmentation Result
 # GT : Ground Truth
 
 def get_accuracy(SR,GT,threshold=0.5):
     SR = SR > threshold
-    GT = GT == tf.math.reduce_max(GT)
-    boolarr = SR == GT
+    GT_bool = GT == tf.math.reduce_max(GT)
+    boolarr = SR == GT_bool
+
+    #Displaying Image
+    binaryarr = tf.where(boolarr, 0, 1)
+    binaryarr = tf.math.scalar_mul(255, binaryarr)
+
+    SR_image = tensor_to_image(binaryarr[0])
+    GT_image = tensor_to_image(GT[0])
+    SR_image.show()
+    GT_image.show()
+
     corr = tf.math.count_nonzero(boolarr)
     tensor_size = SR.shape[0]*SR.shape[1]*SR.shape[2]*SR.shape[3]
     acc = float(corr)/float(tensor_size)
 
     return acc
+
+
+# NOTE: Functions below are not used. Future work should consider evaluating the model by these metrics.
 
 def get_sensitivity(SR,GT,threshold=0.5):
     # Sensitivity == Recall

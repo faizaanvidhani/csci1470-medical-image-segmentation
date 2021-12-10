@@ -12,7 +12,7 @@ class up_conv(tf.keras.Model):
             tf.keras.layers.UpSampling2D(size=(2,2)),
             # stride is 1 and padding is 1
             tf.keras.layers.Conv2D(filters=ch_out,kernel_size=3,strides=(1,1),padding='same',use_bias=True),
-            #tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Activation('relu')
         ])
 
@@ -30,7 +30,7 @@ class Recurrent_block(tf.keras.Model):
         #self.filter = tf.Variable(tf.random.truncated_normal([3,3,ch_out,ch_out],stddev=0.1))
         self.conv = tf.keras.Sequential([
             tf.keras.layers.Conv2D(filters=ch_out,kernel_size=3,strides=(1,1),padding='same',use_bias=True),
-            #tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Activation('relu')
         ])
         
@@ -39,10 +39,7 @@ class Recurrent_block(tf.keras.Model):
         for i in range(self.t):
             if i == 0:
                 x1 = self.conv(x)
-                #print("x1 shape before", x1.shape)
-            #print("x shape", x.shape)
             x1 = self.conv(x+x1)
-            #print("x1 shape after:", x1.shape)
         return x1
 
 class RRCNN_block(tf.keras.Model):
@@ -67,40 +64,23 @@ class R2U_Net(tf.keras.Model):
         self.Maxpool = tf.keras.layers.MaxPool2D(pool_size = (2,2), strides=(2,2), padding= 'same')
         self.Upsample = tf.keras.layers.UpSampling2D(size=(2,2))
 
-        """ self.RRCNN1 = RRCNN_block(ch_in=img_ch,ch_out=64,t=t)
-        self.RRCNN2 = RRCNN_block(ch_in=64,ch_out=128,t=t)
-        self.RRCNN3 = RRCNN_block(ch_in=128,ch_out=256,t=t)
-        self.RRCNN4 = RRCNN_block(ch_in=256,ch_out=512,t=t)
-        self.RRCNN5 = RRCNN_block(ch_in=512,ch_out=1024,t=t) """
-
         self.RRCNN1 = RRCNN_block(ch_in=img_ch,ch_out=8,t=t)
         self.RRCNN2 = RRCNN_block(ch_in=8,ch_out=16,t=t)
         self.RRCNN3 = RRCNN_block(ch_in=16,ch_out=32,t=t)
         self.RRCNN4 = RRCNN_block(ch_in=32,ch_out=64,t=t)
         self.RRCNN5 = RRCNN_block(ch_in=64,ch_out=128,t=t)
 
-        """ self.Up5 = up_conv(ch_in=1024,ch_out=512)
-        self.Up4 = up_conv(ch_in=512,ch_out=256)
-        self.Up3 = up_conv(ch_in=256,ch_out=128)
-        self.Up2 = up_conv(ch_in=128,ch_out=64) """
 
         self.Up5 = up_conv(ch_in=128,ch_out=64)
         self.Up4 = up_conv(ch_in=64,ch_out=32)
         self.Up3 = up_conv(ch_in=32,ch_out=16)
         self.Up2 = up_conv(ch_in=16,ch_out=1)
 
-        """ self.Up_RRCNN5 = RRCNN_block(ch_in=1024,ch_out=512,t=t)
-        self.Up_RRCNN4 = RRCNN_block(ch_in=512,ch_out=256,t=t)
-        self.Up_RRCNN3 = RRCNN_block(ch_in=256,ch_out=128,t=t)
-        self.Up_RRCNN2 = RRCNN_block(ch_in=128,ch_out=64,t=t) """
-
         self.Up_RRCNN5 = RRCNN_block(ch_in=128,ch_out=64,t=t)
         self.Up_RRCNN4 = RRCNN_block(ch_in=64,ch_out=32,t=t)
         self.Up_RRCNN3 = RRCNN_block(ch_in=32,ch_out=16,t=t)
         self.Up_RRCNN2 = RRCNN_block(ch_in=16,ch_out=8,t=t)
 
-        #self.Conv_1x1 = tf.keras.layers.Conv2D(64,kernel_size=1,strides=(1,1),padding='same')
-        #16 instead of 3, valid instead of same
         self.Conv_1x1 = tf.keras.layers.Conv2D(3,kernel_size=1,strides=(1,1),padding='valid')
 
 

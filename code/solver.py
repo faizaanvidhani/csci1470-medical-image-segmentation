@@ -1,19 +1,11 @@
-import os
-import numpy as np
-import time
-import datetime
 import tensorflow as tf
-#import torch
-#import torchvision
 from tensorflow.keras import optimizers
-#from torch.autograd import Variable
-#import torch.nn.functional as F
 import tensorflow.keras.activations as activations
 from evaluation import *
 from network2 import R2U_Net
-from PIL import Image
-from preprocess import tensor_to_image
-import csv
+import matplotlib as mpl
+mpl.use('tkagg')
+from matplotlib import pyplot as plt
 
 
 class Solver(object):
@@ -51,14 +43,9 @@ class Solver(object):
 		self.val_step = 2
 
 		self.device = tf.device('cpu')
-		#self.unet.to(self.device)
 		self.model_type = 'R2U_Net'
-		
-	def tensor2img(self,x):
-		img = (x[:,0,:,:]>x[:,1,:,:]).float()
-		img = img*255
-		return img
-
+		self.train_loss_list = []
+		self.test_acc_list = []
 
 	def train(self):
 		"""Train encoder, generator and discriminator."""
@@ -68,140 +55,77 @@ class Solver(object):
 		
 		# Train for Encoder
 		
+		# NOTE: self.num_epochs set to 1 for current implementation
 		for epoch in range(self.num_epochs):
 
 			epoch_loss = 0
 			
 			acc = 0.	# Accuracy
-			SE = 0.		# Sensitivity (Recall)
-			SP = 0.		# Specificity
-			PC = 0. 	# Precision
-			F1 = 0.		# F1 Score
-			JS = 0.		# Jaccard Similarity
-			DC = 0.		# Dice Coefficient
-			length = 0
 
 			for i in range(0,len(self.train_inputs),self.batch_size):
 				# GT : Ground Truth
 
 				images = self.train_inputs[i:i+self.batch_size]
-				#print('Images:  ', images)
 				GT = self.train_labels[i: i+self.batch_size]
 
 				# Backprop + optimize
 				with tf.GradientTape() as tape:
 					# SR : Segmentation Result
 					SR = self.unet(images)
-					#print("SR", SR)
-					#SR_probs = activations.sigmoid(SR)
 					SR_probs = activations.softmax(SR)
-					#print("SR probs", SR_probs)
 					SR_flat = tf.reshape(SR_probs, [tf.shape(SR_probs)[0],-1])
 					GT_flat = tf.reshape(GT, [tf.shape(GT)[0], -1])
-					#print("SR_flat Shape:", tf.shape(SR_flat))
-					#print("GT_flat Shape:", tf.shape(GT_flat))
-					#loss = tf.keras.metrics.binary_crossentropy(GT_flat, SR_flat)
 					bce = tf.keras.losses.BinaryCrossentropy(from_logits=False)
 					loss = bce(GT_flat, SR_flat)
-					#loss = tf.keras.metrics.binary_crossentropy(GT, SR_probs)
 					avg_loss = tf.reduce_mean(loss)
+					self.train_loss_list.append(avg_loss.numpy())
 					print("loss is", avg_loss)
 					epoch_loss += avg_loss
 
 				gradients = tape.gradient(avg_loss, self.unet.trainable_variables)
-				self.optimizer.apply_gradients(zip(gradients, self.unet.trainable_variables))
-
-				#acc += get_accuracy(SR,GT)
-				""" SE += get_sensitivity(SR,GT)
-				SP += get_specificity(SR,GT)
-				PC += get_precision(SR,GT)
-				F1 += get_F1(SR,GT)
-				JS += get_JS(SR,GT)
-				DC += get_DC(SR,GT) """
-				#length += 1
-
-			#acc = acc/length
-			#print("accuracy is", acc)
-			#print("length is", length)
-			""" SE = SE/length
-			SP = SP/length
-			PC = PC/length
-			F1 = F1/length
-			JS = JS/length
-			DC = DC/length """
-
-			# Print the log info
-			""" print('Epoch [%d/%d], Loss: %.4f, \n[Training] Acc: %.4f, SE: %.4f, SP: %.4f, PC: %.4f, F1: %.4f, JS: %.4f, DC: %.4f' % (
-					epoch+1, self.num_epochs, \
-					epoch_loss,\
-					acc,SE,SP,PC,F1,JS,DC))
- """
-		
-
-			# Decay learning rate
-			""" if (epoch+1) > (self.num_epochs - self.num_epochs_decay):
-				lr -= (self.lr / float(self.num_epochs_decay))
-				for param_group in self.optimizer.param_groups:
-					param_group['lr'] = lr
-				print ('Decay learning rate to lr: {}.'.format(lr)) """
-		
-					
+				self.optimizer.apply_gradients(zip(gradients, self.unet.trainable_variables))	
 			#===================================== Test ====================================#
 
 	def test(self):
-		""" del self.unet
-		self.build_model()
-		self.unet.load_state_dict(tf.io.read_file(unet_path))
-		
-		self.unet.train(False) """
-		#self.unet.eval()
-
 		acc = 0.	# Accuracy
-		SE = 0.		# Sensitivity (Recall)
-		SP = 0.		# Specificity
-		PC = 0. 	# Precision
-		F1 = 0.		# F1 Score
-		JS = 0.		# Jaccard Similarity
-		DC = 0.		# Dice Coefficient
-		length=0
 		for i in range(0,len(self.test_inputs),self.batch_size):
 			# GT : Ground Truth
-
 			images = self.test_inputs[i:i+self.batch_size]
-			#print('Images:  ', images)
 			GT = self.test_labels[i: i+self.batch_size]
+			SR = self.unet(images)
+			SR_probs = activations.softmax(SR)
 
-			SR = activations.softmax(self.unet(images))
-
-			#Displaying Images
-			SR_image = tensor_to_image(SR[0])
-			GT_image = tensor_to_image(GT[0])
-			SR_image.show()
-			GT_image.show()
-
-			
-			acc += get_accuracy(SR,GT)
-			""" SE += get_sensitivity(SR,GT)
-			SP += get_specificity(SR,GT)
-			PC += get_precision(SR,GT)
-			F1 += get_F1(SR,GT)
-			JS += get_JS(SR,GT)
-			DC += get_DC(SR,GT) """
-					
-			length += 1
+			batch_acc = get_accuracy(SR_probs,GT)
+			self.test_acc_list.append(batch_acc)
+			acc += batch_acc
 				
-		acc = acc/length
+		acc = acc/len(self.test_acc_list)
 		print("final acc is", acc)
-		""" SE = SE/length
-		SP = SP/length
-		PC = PC/length
-		F1 = F1/length
-		JS = JS/length
-		DC = DC/length """
-		#unet_score = JS + DC
-
-
-		#f = open(os.path.join(self.result_path,'result.csv'), 'a', encoding='utf-8', newline='')
-		#wr = csv.writer(f)
-		#wr.writerow([self.model_type,acc,SE,SP,PC,F1,JS,DC,self.lr,self.num_epochs,self.num_epochs_decay,self.augmentation_prob])
-		#f.close()
+		print("loss_list:", self.train_loss_list)
+		print("acc_list:", self.test_acc_list)
+	
+	def visualize_loss(self):
+		"""
+		Uses Matplotlib to visualize the losses of our model.
+		:param losses: list of loss data stored from train
+		:return: doesn't return anything, a plot should pop-up 
+		"""
+		x = [i for i in range(len(self.train_loss_list))]
+		plt.plot(x, self.train_loss_list)
+		plt.title('TRAINING: Loss per batch')
+		plt.xlabel('Batch')
+		plt.ylabel('Loss')
+		plt.show()
+	
+	def visualize_accuracy(self):
+		"""
+		Uses Matplotlib to visualize the batch accuracies of our model.
+		:param losses: list of batch accuracy stored from test
+		:return: doesn't return anything, a plot should pop-up 
+		"""
+		x = [i for i in range(len(self.test_acc_list))]
+		plt.plot(x, self.test_acc_list)
+		plt.title('TEST: Accuracy per batch')
+		plt.xlabel('Batch')
+		plt.ylabel('Accuracy')
+		plt.show()    
